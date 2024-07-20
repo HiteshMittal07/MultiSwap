@@ -1,8 +1,8 @@
 const hre = require("hardhat");
 
 async function main() {
-  const Create = await hre.ethers.deployContract("MultiTokenSwapper", [
-    "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E",
+  const Create = await hre.ethers.deployContract("MultiSwap", [
+    "0x4ce3a7A6CAdbE423Fb90339813023A6c69a92CbC",
   ]);
   await Create.waitForDeployment();
 

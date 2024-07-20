@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 module.exports = {
-  solidity: "0.7.6",
+  solidity: "0.8.24",
   networks: {
     sepolia: {
       url: "https://sepolia.infura.io/v3/006a677fe90346f9bf6cb52a2a6b340b",
