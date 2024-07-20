@@ -1,21 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity =0.7.6;
-pragma abicoder v2;
+pragma solidity 0.8.24;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import '@uniswap/swap-router-contracts/contracts/interfaces/ISwapRouter02.sol';
+import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
+contract MultiSwap {
+    ISwapRouter public immutable swapRouter;
 
-interface IERC20{
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function balanceOf(address account) external view returns (uint256);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-}
-
-contract MultiTokenSwapper {
-    ISwapRouter02 public immutable swapRouter;
-    constructor(ISwapRouter02 _swapRouter) {
+    constructor(ISwapRouter _swapRouter) {
         swapRouter = _swapRouter;
     }
 
@@ -29,27 +23,34 @@ contract MultiTokenSwapper {
         require(tokenAddresses.length == amounts.length, "Array lengths do not match");
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
-            IERC20 token=IERC20(tokenAddresses[i]);
-            token.approve(address(swapRouter), amounts[i]);
-            token.transferFrom(msg.sender, address(this), amounts[i]);
-            
-
-            ISwapRouter02.ExactInputSingleParams memory params = ISwapRouter02.ExactInputSingleParams(
-                    tokenAddresses[i],
-                    outputToken,
-                    uint24(3000),
-                    address(this),
-                    amounts[i],
-                    0,
-                    uint160(0)
-                );
-
-            swapRouter.exactInputSingle(params);
+            _swapSingleToken(tokenAddresses[i], amounts[i], outputToken);
         }
 
-        IERC20 token = IERC20(outputToken);
-        uint256 outputTokenBalance=token.balanceOf(address(this));
+        uint256 outputTokenBalance = IERC20(outputToken).balanceOf(address(this));
         require(outputTokenBalance >= minOutputAmount, "Insufficient output amount");
-        token.transfer(recipient, outputTokenBalance);
+        TransferHelper.safeTransfer(outputToken, recipient, outputTokenBalance);
+    }
+
+    function _swapSingleToken(
+        address inputToken,
+        uint256 amount,
+        address outputToken
+    ) internal {
+        TransferHelper.safeTransferFrom(inputToken, msg.sender, address(this), amount);
+        TransferHelper.safeApprove(inputToken, address(swapRouter), amount);
+
+        ISwapRouter.ExactInputSingleParams memory params =
+            ISwapRouter.ExactInputSingleParams({
+                tokenIn: inputToken,
+                tokenOut: outputToken,
+                fee: 3000, // Example fee tier, adjust as needed
+                recipient: address(this),
+                deadline: block.timestamp + 15,
+                amountIn: amount,
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            });
+
+        swapRouter.exactInputSingle(params);
     }
 }
