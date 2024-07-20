@@ -5,12 +5,17 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 contract MultiSwap {
     ISwapRouter public immutable swapRouter;
+    IUniswapV3Factory public immutable factory;
 
-    constructor(ISwapRouter _swapRouter) {
+    event PoolCreated(address indexed pool, address token0, address token1, uint24 fee);
+    constructor(ISwapRouter _swapRouter,IUniswapV3Factory _factory) {
         swapRouter = _swapRouter;
+        factory=_factory;
     }
 
     function swapTokensForSingleToken(
@@ -53,4 +58,16 @@ contract MultiSwap {
 
         swapRouter.exactInputSingle(params);
     }
+    function createPool(
+        address token0,
+        address token1,
+        uint24 fee
+    ) external returns (address pool) {
+        if (token0 > token1) {
+            (token0, token1) = (token1, token0);
+        }
+        pool = factory.createPool(token0, token1, fee);
+        emit PoolCreated(pool, token0, token1, fee);
+    }
+
 }
