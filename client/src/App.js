@@ -18,7 +18,7 @@ function App() {
   const [balances, setBalances] = useState({});
   const [outputToken, setOutputToken] = useState("");
   const [walletAddress, setWalletAddress] = useState(null);
-
+  const [connected,setConnected]=useState(false);
   useEffect(() => {
     async function fetchBalances() {
       const provider = getProvider();
@@ -44,7 +44,7 @@ function App() {
     }
 
     fetchBalances();
-  }, []);
+  }, [connected]);
 
   const handleTokenSelection = (event, index) => {
     const selectedAddress = event.target.value;
@@ -131,7 +131,7 @@ function App() {
 
   return (
     <div className="App">
-      <Header />
+      <Header setConnected={setConnected}/>
       <h1 className="text-8xl">Multi Swap</h1>
       <div className="flex justify-center items-center">
         <Card className="max-w-lg w-96 mt-10">

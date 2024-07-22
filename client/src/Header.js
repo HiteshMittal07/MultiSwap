@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Button, Navbar } from "flowbite-react";
 import { getProvider, requestAccounts, switchNetwork } from "./web3/web3";
-const Header = () => {
+const Header = (props) => {
   const [display, setDisplay] = useState(null);
   const [account, setAccount] = useState(null);
   const truncateWalletAddress = async (address, length = 4) => {
@@ -27,6 +27,7 @@ const Header = () => {
       const address = await requestAccounts(provider);
       truncateWalletAddress(address);
       toast.success("connected successfully");
+      props.setConnected(true);
     } catch (error) {
       alert(error);
     }
@@ -37,6 +38,7 @@ const Header = () => {
       const provider = getProvider();
       const address = await requestAccounts(provider);
       truncateWalletAddress(address);
+      props.setConnected(true);
     };
     connect();
   }, []);
