@@ -4,15 +4,47 @@ import {
   contract_address,
   getContract,
   getProvider,
+  requestAccounts,
   tokenList,
 } from "./web3/web3";
 import { Button, Card, Select, TextInput } from "flowbite-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Header from "./Header";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const [selectedTokens, setSelectedTokens] = useState([""]);
   const [amounts, setAmounts] = useState({});
+  const [balances, setBalances] = useState({});
   const [outputToken, setOutputToken] = useState("");
+  const [walletAddress, setWalletAddress] = useState(null);
+
+  useEffect(() => {
+    async function fetchBalances() {
+      const provider = getProvider();
+      const signer = provider.getSigner();
+      const address = await requestAccounts(provider);
+      setWalletAddress(address);
+
+      const balances = {};
+      for (const token of tokenList) {
+        const tokenContract = new ethers.Contract(
+          token.address,
+          ["function balanceOf(address owner) view returns (uint256)"],
+          provider
+        );
+
+        const balance = await tokenContract.balanceOf(address);
+        balances[token.address] = ethers.utils.formatUnits(
+          balance,
+          token.decimals
+        );
+      }
+      setBalances(balances);
+    }
+
+    fetchBalances();
+  }, []);
 
   const handleTokenSelection = (event, index) => {
     const selectedAddress = event.target.value;
@@ -24,6 +56,12 @@ function App() {
   const handleAmountChange = (event, address) => {
     const newAmounts = { ...amounts };
     newAmounts[address] = event.target.value;
+    setAmounts(newAmounts);
+  };
+
+  const handleMaxButtonClick = (address) => {
+    const newAmounts = { ...amounts };
+    newAmounts[address] = balances[address] || "0";
     setAmounts(newAmounts);
   };
 
@@ -93,6 +131,7 @@ function App() {
 
   return (
     <div className="App">
+      <Header />
       <h1 className="text-8xl">Multi Swap</h1>
       <div className="flex justify-center items-center">
         <Card className="max-w-lg w-96 mt-10">
@@ -116,6 +155,19 @@ function App() {
                 value={amounts[token] || ""}
                 onChange={(e) => handleAmountChange(e, token)}
               />
+              {balances[token] && (
+                <div className="flex items-center mt-2">
+                  <button
+                    className="ml-2 bg-blue-500 text-white py-1 px-2 rounded"
+                    onClick={() => handleMaxButtonClick(token)}
+                  >
+                    Max
+                  </button>
+                  <p className="text-sm text-gray-500 mt-1 ml-2">
+                    Balance: {balances[token]}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
           <Button onClick={() => setSelectedTokens([...selectedTokens, ""])}>
