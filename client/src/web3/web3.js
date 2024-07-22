@@ -48,3 +48,53 @@ export const getContract = (provider) => {
   const signer = provider.getSigner();
   return new ethers.Contract(contract_address, contractABI, signer);
 };
+export async function requestAccounts(provider) {
+  const accounts = await provider.send("eth_requestAccounts", []);
+  return accounts[0];
+}
+export const addNetwork = async (Id) => {
+  const chainId = `0x${Number(Id).toString(16)}`;
+  const rpcUrl = "https://polygon-rpc.com";
+  const chainName = "Polygon";
+  const blockUrl = "https://polygonscan.com";
+  const networkParams = {
+    chainId: chainId,
+    chainName: chainName, // Network name
+    nativeCurrency: {
+      name: "MATIC",
+      symbol: "MATIC",
+      decimals: 18,
+    },
+    rpcUrls: [rpcUrl],
+    blockExplorerUrls: [blockUrl], // Block explorer URL
+  };
+  window.ethereum
+    .request({
+      method: "wallet_addEthereumChain",
+      params: [networkParams],
+    })
+    .then(() => {
+      console.log("Custom network added to MetaMask");
+    })
+    .catch((error) => {
+      console.error("Failed to add custom network to MetaMask:", error);
+    });
+};
+export async function switchNetwork(selectedValue) {
+  await window.ethereum
+    .request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: `0x${Number(selectedValue).toString(16)}` }],
+    })
+    .then(() => {
+      console.log("Chain ID is added in MetaMask");
+    })
+    .catch((error) => {
+      if (error.code === 4902) {
+        console.log("Chain ID is not added in MetaMask");
+        addNetwork(selectedValue);
+      } else {
+        console.error(error);
+      }
+    });
+}
