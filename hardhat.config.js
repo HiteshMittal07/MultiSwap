@@ -13,7 +13,10 @@ module.exports = {
       accounts: [PRIVATE_KEY],
     },
     hardhat: {
-      chainId: 31337,
+      forking: {
+        url: "https://polygon-mainnet.infura.io/v3/6ee38d8487b64702a7736903e3e8e690",
+        accounts: [PRIVATE_KEY2],
+      },
     },
     zkEVM: {
       url: "https://rpc.cardona.zkevm-rpc.com",
